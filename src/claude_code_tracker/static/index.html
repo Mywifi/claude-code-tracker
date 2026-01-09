@@ -11,7 +11,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-dark.min.css">
     <link rel="stylesheet" href="/report/static/styles.css">
 </head>
 <body class="min-h-screen overflow-hidden">
@@ -133,8 +132,8 @@
                         </div>
 
                         <!-- 目录 TOC -->
-                        <div id="toc-container" class="w-48 shrink-0 hidden lg:block sticky top-0 h-fit pt-2">
-                            <p class="text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em] mb-6">Contents</p>
+                        <div id="toc-container" class="w-48 shrink-0 hidden lg:block sticky top-0 h-[calc(100vh-200px)] pt-2 overflow-y-auto custom-scrollbar">
+                            <p class="text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em] mb-6 sticky top-0 bg-claude-bg pb-2 z-10">Contents</p>
                             <nav id="toc-list" class="space-y-3 text-[10px] border-l border-claude"></nav>
                         </div>
 

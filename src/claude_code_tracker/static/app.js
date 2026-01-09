@@ -185,22 +185,79 @@ function renderInteractionLog(item) {
         div.id = `msg-${mIdx}`;
         const isUser = msg.role === 'user';
         div.className = `p-6 rounded-lg ${isUser ? 'message-user' : 'message-assistant'}`;
-        
+
         let contentHtml = '';
         if (Array.isArray(msg.content)) {
             contentHtml = '<div class="space-y-6">';
             msg.content.forEach(c => {
-                contentHtml += '<div class="content-block pb-6 last:pb-0 last:border-0 border-b border-claude">';
-                if (c.type === 'text') contentHtml += processText(c.text);
-                else if (c.type === 'tool_use') contentHtml += `<div class="bg-black text-amber-500 p-3 rounded font-mono text-[10px] uppercase tracking-[0.2em] border border-amber-900/30">Execute: ${c.name}</div>`;
-                else if (c.type === 'tool_result') contentHtml += `<div class="bg-black text-blue-400 p-3 rounded font-mono text-[10px] uppercase tracking-[0.2em] border border-blue-900/30">Output Captured</div>`;
+                contentHtml += '<div class="content-block pb-6 last:pb-0 last:border-0 border-b border-claude last:border-0">';
+
+                if (c.type === 'text') {
+                    contentHtml += processText(c.text);
+                }
+                else if (c.type === 'thinking') {
+                    // Thinking content block
+                    contentHtml += `
+                        <div class="bg-amber-900/10 border border-amber-900/30 rounded-lg overflow-hidden">
+                            <div class="bg-amber-900/20 px-3 py-1.5 flex items-center gap-2 border-b border-amber-900/20">
+                                <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                                <span class="text-[9px] font-black text-amber-500 uppercase tracking-[0.2em]">Thinking</span>
+                            </div>
+                            <div class="p-3 text-sm text-amber-500/80 italic">${c.thinking || ''}</div>
+                        </div>`;
+                }
+                else if (c.type === 'tool_use') {
+                    // Tool execution block
+                    const toolInput = c.input ? JSON.stringify(c.input, null, 2) : '';
+                    contentHtml += `
+                        <div class="bg-claude-card border border-amber-600/30 rounded-lg overflow-hidden">
+                            <div class="bg-amber-600/10 px-3 py-1.5 flex items-center gap-2 border-b border-amber-600/20">
+                                <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="text-[9px] font-black text-amber-500 uppercase tracking-[0.2em]">Execute: ${c.name}</span>
+                            </div>
+                            ${toolInput ? `<div class="p-3"><pre class="text-xs text-claude-text-muted overflow-x-auto"><code>${escapeHtml(toolInput)}</code></pre></div>` : ''}
+                        </div>`;
+                }
+                else if (c.type === 'tool_result') {
+                    // Tool result block
+                    let resultContent = '';
+                    if (typeof c.content === 'string') {
+                        resultContent = c.content;
+                    } else if (Array.isArray(c.content)) {
+                        resultContent = c.content.map(item => item.text || JSON.stringify(item)).join('\n');
+                    } else if (c.content) {
+                        resultContent = JSON.stringify(c.content, null, 2);
+                    }
+
+                    // Truncate long outputs
+                    if (resultContent.length > 2000) {
+                        resultContent = resultContent.substring(0, 2000) + '\n\n... (truncated)';
+                    }
+
+                    contentHtml += `
+                        <div class="bg-claude-card border border-blue-600/30 rounded-lg overflow-hidden">
+                            <div class="bg-blue-600/10 px-3 py-1.5 flex items-center gap-2 border-b border-blue-600/20">
+                                <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em]">Tool Result${c.is_error ? ' (Error)' : ''}</span>
+                                ${c.tool_use_id ? `<span class="text-[9px] text-neutral-500">ID: ${c.tool_use_id.slice(0, 8)}...</span>` : ''}
+                            </div>
+                            ${resultContent ? `<div class="p-3 text-xs text-claude-text-muted whitespace-pre-wrap font-mono">${escapeHtml(resultContent)}</div>` : ''}
+                        </div>`;
+                }
                 contentHtml += '</div>';
             });
             contentHtml += '</div>';
         } else {
             contentHtml = processText(msg.content || '');
         }
-        
+
         div.innerHTML = `
             <div class="flex items-center justify-between mb-4 border-b border-claude pb-2">
                 <span class="text-[9px] font-black uppercase tracking-[0.2em] ${isUser ? 'text-blue-500' : 'text-amber-500'}">${msg.role}</span>
@@ -208,6 +265,13 @@ function renderInteractionLog(item) {
             <div class="text-sm markdown-body">${contentHtml}</div>`;
         container.appendChild(div);
     });
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function renderFinalResponse(item) {
