@@ -15,26 +15,7 @@ Claude Tracker 是一个为 [Claude Code](https://docs.anthropic.com/claude/docs
 
 ## 截图预览
 
-```
-┌─────────────────────┬─────────────────────────────────────────────┐
-│  Claude Tracker     │  MODEL: CLAUDE-3-5-SONNET-20241022         │
-│                     │  2024-01-09 14:30:22 / USER_ID              │
-├─────────────────────┼─────────────────────────────────────────────┤
-│  5 RECORDS          │  [Visual Render]  [Raw Analysis]           │
-│                     │                                             │
-│  ▸ Today            │  System Directives                         │
-│    hello world      │  ────────────────────────────              │
-│    fix bug in...    │  You are Claude Code...                    │
-│    explain regex    │                                             │
-│                     │  Interaction Log                           │
-│                     │  ────────────────────────────              │
-│                     │  USER                                       │
-│                     │  How do I parse JSON?                      │
-│                     │                                             │
-│                     │  ASSISTANT                                 │
-│                     │  Here's how to parse JSON...               │
-└─────────────────────┴─────────────────────────────────────────────┘
-```
+![Claude Tracker Preview](pic.png)
 
 ## 快速开始
 
