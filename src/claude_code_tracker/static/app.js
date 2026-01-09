@@ -90,9 +90,10 @@ function renderPromptList() {
 
     // Sort by updated_at descending, fallback to timestamp
     const sortedPrompts = [...appData.prompts].sort((a, b) => {
-        const timeA = new Date(a.updated_at || a.timestamp).getTime();
-        const timeB = new Date(b.updated_at || b.timestamp).getTime();
-        return timeB - timeA;
+        const timeA = a.updated_at || a.timestamp;
+        const timeB = b.updated_at || b.timestamp;
+        // Direct string comparison works for "YYYY-MM-DD HH:MM:SS,mmm" format
+        return timeB.localeCompare(timeA);
     });
 
     sortedPrompts.forEach((item) => {
@@ -489,17 +490,25 @@ function updateTOC() {
                 const onlyToolResult = !hasText && !hasToolUse && msg.content.some(c => c.type === 'tool_result');
                 if (onlyToolResult) return;  // Skip tool_result only messages
 
-                // Try to find text content first
-                const textObj = msg.content.find(c => c.type === 'text');
+                // Try to find text content (skip text starting with <system-reminder>)
+                const textObjs = msg.content.filter(c => c.type === 'text' && c.text && !c.text.startsWith('<system-reminder>'));
+                const textObj = textObjs.length > 0 ? textObjs[0] : null;
                 if (textObj && textObj.text) {
                     previewText = textObj.text.substring(0, 20).replace(/\n/g, ' ').trim();
                     foundContent = true;
                 } else {
-                    // Try to find tool_use name
-                    const toolUse = msg.content.find(c => c.type === 'tool_use');
-                    if (toolUse && toolUse.name) {
-                        previewText = `[${toolUse.name}]`;
+                    // Try to find thinking content
+                    const thinkingObj = msg.content.find(c => c.type === 'thinking');
+                    if (thinkingObj && thinkingObj.thinking) {
+                        previewText = thinkingObj.thinking.substring(0, 20).replace(/\n/g, ' ').trim();
                         foundContent = true;
+                    } else {
+                        // Try to find tool_use name
+                        const toolUse = msg.content.find(c => c.type === 'tool_use');
+                        if (toolUse && toolUse.name) {
+                            previewText = `[${toolUse.name}]`;
+                            foundContent = true;
+                        }
                     }
                 }
             }
