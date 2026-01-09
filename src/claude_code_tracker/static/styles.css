@@ -1,0 +1,168 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --claude-bg: #1A1A1A;
+    --claude-sidebar: #111111;
+    --claude-accent: #D97706; /* Amber-600 */
+    --claude-text: #E5E5E5;
+    --claude-text-muted: #A3A3A3;
+    --claude-border: #333333;
+    --claude-card: #262626;
+    --claude-code-bg: #0c0c0c;
+    --claude-user-bg: #1e293b;
+    --claude-ai-bg: #262626;
+    --claude-system-bg: #2e2417;
+    --claude-system-border: #78350f;
+    --claude-system-text: #fde68a;
+    --claude-list-hover: #1a1a1a;
+    --claude-scrollbar-thumb: #444;
+    --claude-scrollbar-thumb-hover: #555;
+}
+
+[data-theme="light"] {
+    --claude-bg: #f5f5f5;
+    --claude-sidebar: #ffffff;
+    --claude-accent: #D97706;
+    --claude-text: #171717;
+    --claude-text-muted: #737373;
+    --claude-border: #e5e5e5;
+    --claude-card: #ffffff;
+    --claude-code-bg: #f5f5f5;
+    --claude-user-bg: #f0f9ff;
+    --claude-ai-bg: #ffffff;
+    --claude-system-bg: #fffbeb;
+    --claude-system-border: #fbbf24;
+    --claude-system-text: #78350f;
+    --claude-list-hover: #f5f5f5;
+    --claude-scrollbar-thumb: #ccc;
+    --claude-scrollbar-thumb-hover: #999;
+}
+
+body { 
+    background-color: var(--claude-bg); 
+    color: var(--claude-text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--claude-scrollbar-thumb);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--claude-scrollbar-thumb-hover);
+}
+
+/* Markdown Styles */
+.markdown-body { 
+    background-color: transparent !important; 
+    font-size: 14px; 
+    color: var(--claude-text) !important;
+}
+
+.markdown-body pre { 
+    background-color: var(--claude-code-bg) !important; 
+    border: 1px solid var(--claude-border) !important;
+}
+
+.markdown-body code { 
+    font-family: 'JetBrains Mono', monospace; 
+    background-color: rgba(128, 128, 128, 0.1); 
+}
+
+/* Message Styles */
+.message-user { 
+    background-color: var(--claude-user-bg); 
+    border: 1px solid var(--claude-border);
+    border-left: 4px solid #3b82f6;
+}
+
+.message-assistant { 
+    background-color: var(--claude-ai-bg); 
+    border: 1px solid var(--claude-border);
+    border-left: 4px solid var(--claude-accent);
+}
+
+.message-system { 
+    background-color: var(--claude-system-bg); 
+    border: 1px solid var(--claude-system-border);
+    border-left: 4px solid var(--claude-accent);
+    color: var(--claude-system-text) !important;
+}
+
+/* Sidebar and List */
+.sidebar {
+    background-color: var(--claude-sidebar);
+    border-color: var(--claude-border);
+}
+
+.list-item {
+    border-bottom: 1px solid var(--claude-border);
+    transition: all 0.2s;
+}
+
+.list-item:hover {
+    background-color: var(--claude-list-hover);
+}
+
+.list-item.active {
+    background-color: var(--claude-list-hover) !important;
+    border-left-color: var(--claude-accent) !important;
+}
+
+/* Details and Tabs */
+.detail-view {
+    background-color: var(--claude-bg);
+}
+
+.header-area {
+    background-color: var(--claude-bg);
+    border-bottom: 1px solid var(--claude-border);
+}
+
+.tab-btn {
+    color: var(--claude-text-muted);
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+    color: var(--claude-text);
+    border-bottom-color: var(--claude-accent);
+}
+
+.tab-btn:hover:not(.active) {
+    color: var(--claude-text);
+}
+
+/* Tools */
+.tool-card {
+    border: 1px solid var(--claude-border);
+    background-color: var(--claude-ai-bg);
+}
+
+.tool-header:hover {
+    background-color: var(--claude-list-hover);
+}
+
+.tool-schema {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--claude-border);
+}
+
+[data-theme="dark"] .tool-schema {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Utility */
+.border-claude { border-color: var(--claude-border); }
+.bg-claude-bg { background-color: var(--claude-bg); }
+.bg-claude-sidebar { background-color: var(--claude-sidebar); }
+.text-claude-text { color: var(--claude-text); }
+.text-claude-muted { color: var(--claude-text-muted); }

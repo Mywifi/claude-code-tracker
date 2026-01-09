@@ -8,10 +8,11 @@ from datetime import datetime
 from pathlib import Path
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 from .utils import check_dns_private
-from .reporter import generate_report
+# from .reporter import generate_report  # No longer used
 
 # Load environment variables
 load_dotenv()
@@ -30,10 +31,13 @@ DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 PROMPTS_FILE = DATA_DIR / os.environ.get("PROMPTS_FILE", "ai_prompts.json")
-REPORT_FILE = DATA_DIR / os.environ.get("REPORT_FILE", "prompt_report.html")
 PROMPTS_FILE_LOCK = threading.Lock()
 
 app = FastAPI(title="Claude Tracker Proxy")
+
+# Mount static files
+static_dir = Path(__file__).parent / "static"
+app.mount("/report/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Shared AsyncClient for connection pooling
 http_client = httpx.AsyncClient(timeout=600.0, verify=VERIFY_SSL, trust_env=True)
@@ -41,19 +45,6 @@ http_client = httpx.AsyncClient(timeout=600.0, verify=VERIFY_SSL, trust_env=True
 @app.on_event("shutdown")
 async def shutdown_event():
     await http_client.aclose()
-
-def trigger_report_generation():
-    """Trigger report generation in a background thread."""
-    def run_with_lock():
-        with PROMPTS_FILE_LOCK:
-            generate_report(PROMPTS_FILE, REPORT_FILE)
-            
-    try:
-        thread = threading.Thread(target=run_with_lock)
-        thread.daemon = True
-        thread.start()
-    except Exception as e:
-        logger.error(f"Failed to trigger report generation: {e}")
 
 def save_interaction(request_body: dict, response_data: any = None, timestamp: str = None):
     """Save interaction to JSON file."""
@@ -84,8 +75,6 @@ def save_interaction(request_body: dict, response_data: any = None, timestamp: s
             
             with open(PROMPTS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-            
-            trigger_report_generation()
             
     except Exception as e:
         logger.error(f"Failed to save interaction: {e}")
@@ -206,15 +195,24 @@ async def root():
 
 @app.get("/report")
 async def get_report():
-    if not REPORT_FILE.exists():
-        raise HTTPException(status_code=404, detail="Report not ready.")
-    return FileResponse(str(REPORT_FILE))
+    index_file = Path(__file__).parent / "static" / "index.html"
+    if not index_file.exists():
+        raise HTTPException(status_code=404, detail="Frontend not found.")
+    return FileResponse(str(index_file))
+
+@app.get("/report/data")
+async def get_report_data():
+    if not PROMPTS_FILE.exists():
+        return {"extraction_time": datetime.now().isoformat(), "prompts": [], "total_prompts": 0, "last_updated": datetime.now().isoformat()}
+    with PROMPTS_FILE_LOCK:
+        with open(PROMPTS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
 
 @app.get("/report/status")
 async def get_report_status():
-    if not REPORT_FILE.exists():
+    if not PROMPTS_FILE.exists():
         return {"mtime": 0}
-    return {"mtime": REPORT_FILE.stat().st_mtime}
+    return {"mtime": PROMPTS_FILE.stat().st_mtime}
 
 def main():
     port = int(os.environ.get("PORT", 8082))
