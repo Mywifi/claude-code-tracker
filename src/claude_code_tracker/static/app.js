@@ -428,22 +428,21 @@ function toggleTool(id) {
 
 function switchTab(view) {
     currentTab = view;
-    const render = document.getElementById('view-render');
+    const renderLayout = document.getElementById('render-layout');
     const raw = document.getElementById('view-raw');
     const rBtn = document.getElementById('tab-render');
     const rwBtn = document.getElementById('tab-raw');
-    const toc = document.getElementById('toc-container');
     
     if (view === 'render') {
-        render.classList.remove('hidden');
+        renderLayout.classList.remove('hidden');
         raw.classList.add('hidden');
-        toc?.classList.remove('invisible');
+        // Force TOC update if layout is shown
+        setTimeout(updateTOC, 0);
         rBtn.classList.add('active');
         rwBtn.classList.remove('active');
     } else {
-        render.classList.add('hidden');
+        renderLayout.classList.add('hidden');
         raw.classList.remove('hidden');
-        toc?.classList.add('invisible');
         rBtn.classList.remove('active');
         rwBtn.classList.add('active');
     }
