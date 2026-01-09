@@ -125,7 +125,6 @@ def save_interaction(request_body: dict, response_data: any = None, timestamp: s
     For the same conversation (session + first user message), only keeps the most complete record.
     """
     global DEDUP_HASH_CACHE, SESSION_MSG_COUNT_CACHE
-    import json as _json
     
     if timestamp is None:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
@@ -137,17 +136,10 @@ def save_interaction(request_body: dict, response_data: any = None, timestamp: s
     conv_id = _compute_conversation_id(request_body)
     first_msg_preview = _get_first_user_message(request_body.get("messages", []))[:30]
     
-    # #region agent log
-    open("/home/super/codes/claude-code-proxy/.cursor/debug.log", "a").write(_json.dumps({"location":"proxy.py:save_interaction","message":"called","data":{"timestamp":timestamp,"conv_id":conv_id[:12],"first_msg":first_msg_preview,"messages_count":messages_count,"cached_count":SESSION_MSG_COUNT_CACHE.get(conv_id,0)},"hypothesisId":"FIX2","ts":now.isoformat()},ensure_ascii=False)+"\n")
-    # #endregion
-
     # Conversation-based deduplication: skip if we already have a more complete record
     if conv_id in SESSION_MSG_COUNT_CACHE:
         cached_count = SESSION_MSG_COUNT_CACHE[conv_id]
         if messages_count <= cached_count:
-            # #region agent log
-            open("/home/super/codes/claude-code-proxy/.cursor/debug.log", "a").write(_json.dumps({"location":"proxy.py:conv_dedup","message":"SKIPPED - not more complete","data":{"conv_id":conv_id[:12],"messages_count":messages_count,"cached_count":cached_count},"hypothesisId":"FIX2","ts":now.isoformat()},ensure_ascii=False)+"\n")
-            # #endregion
             logger.debug(f"Skipping less complete request: conv={conv_id[:8]}, msgs={messages_count} <= {cached_count}")
             return
 
@@ -157,6 +149,7 @@ def save_interaction(request_body: dict, response_data: any = None, timestamp: s
     try:
         interaction_data = {
             "timestamp": timestamp,
+            "updated_at": now.strftime("%Y-%m-%d %H:%M:%S,%f")[:-3],
             "model": request_body.get("model", ""),
             "conv_id": conv_id,
             "first_user_message": first_msg_preview,
@@ -188,16 +181,10 @@ def save_interaction(request_body: dict, response_data: any = None, timestamp: s
                     # Replace with more complete record
                     data["prompts"][i] = interaction_data
                     updated = True
-                    # #region agent log
-                    open("/home/super/codes/claude-code-proxy/.cursor/debug.log", "a").write(_json.dumps({"location":"proxy.py:save","message":"UPDATED existing conv","data":{"conv_id":conv_id[:12],"messages_count":messages_count,"index":i},"hypothesisId":"FIX2","ts":now.isoformat()},ensure_ascii=False)+"\n")
-                    # #endregion
                     break
             
             if not updated:
                 data["prompts"].append(interaction_data)
-                # #region agent log
-                open("/home/super/codes/claude-code-proxy/.cursor/debug.log", "a").write(_json.dumps({"location":"proxy.py:save","message":"APPENDED new conv","data":{"conv_id":conv_id[:12],"messages_count":messages_count},"hypothesisId":"FIX2","ts":now.isoformat()},ensure_ascii=False)+"\n")
-                # #endregion
 
             data["total_prompts"] = len(data["prompts"])
             data["last_updated"] = datetime.now().isoformat()

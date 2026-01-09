@@ -80,16 +80,23 @@ function renderPromptList() {
     
     if (!appData || !appData.prompts) return;
 
-    const prompts = [...appData.prompts].reverse();
-    prompts.forEach((item, index) => {
-        const actualIndex = appData.prompts.length - 1 - index;
+    // Sort by updated_at descending, fallback to timestamp
+    const sortedPrompts = [...appData.prompts].sort((a, b) => {
+        const timeA = new Date(a.updated_at || a.timestamp).getTime();
+        const timeB = new Date(b.updated_at || b.timestamp).getTime();
+        return timeB - timeA;
+    });
+
+    sortedPrompts.forEach((item) => {
+        // Find original index in appData.prompts for showDetail
+        const actualIndex = appData.prompts.indexOf(item);
         const div = document.createElement('div');
         div.className = `p-5 list-item cursor-pointer border-l-4 border-l-transparent group ${currentDetailIndex === actualIndex ? 'active' : ''}`;
         div.id = `item-${actualIndex}`;
         div.onclick = () => showDetail(actualIndex);
         
-        let preview = "No message content";
-        if (item.full_request.messages && item.full_request.messages.length > 0) {
+        let preview = item.first_user_message || "No message content";
+        if (!item.first_user_message && item.full_request.messages && item.full_request.messages.length > 0) {
             const lastMsg = item.full_request.messages[item.full_request.messages.length - 1];
             if (Array.isArray(lastMsg.content)) {
                 const textObj = lastMsg.content.find(c => c.type === 'text');
@@ -99,10 +106,12 @@ function renderPromptList() {
             }
         }
 
+        const displayTime = (item.updated_at || item.timestamp).split(' ')[1] || (item.updated_at || item.timestamp).split('T')[1]?.split('.')[0] || "";
+
         div.innerHTML = `
             <div class="flex justify-between items-center mb-2">
                 <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest">${item.model}</span>
-                <span class="text-[9px] font-mono text-neutral-600 group-hover:text-neutral-400 transition-colors">${item.timestamp.split(' ')[1]}</span>
+                <span class="text-[9px] font-mono text-neutral-600 group-hover:text-neutral-400 transition-colors">${displayTime}</span>
             </div>
             <div class="text-[11px] text-neutral-500 line-clamp-2 leading-relaxed font-medium">${preview}</div>
         `;
@@ -119,10 +128,13 @@ function showDetail(index) {
     
     // Highlight active list item
     document.querySelectorAll('#prompt-list > div').forEach(el => el.classList.remove('active'));
-    document.getElementById(`item-${index}`).classList.add('active');
+    const activeItem = document.getElementById(`item-${index}`);
+    if (activeItem) activeItem.classList.add('active');
     
     document.getElementById('detail-model').textContent = item.model.toUpperCase();
-    document.getElementById('detail-time').textContent = item.timestamp;
+    
+    const timeDisplay = item.updated_at ? `STARTED: ${item.timestamp} / UPDATED: ${item.updated_at}` : item.timestamp;
+    document.getElementById('detail-time').textContent = timeDisplay;
     const userId = item.full_request.metadata ? item.full_request.metadata.user_id : 'anonymous';
     document.getElementById('detail-user-id').textContent = userId;
     document.getElementById('badge-stream').style.display = item.full_request.stream ? 'inline-block' : 'none';
