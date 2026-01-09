@@ -14,44 +14,64 @@ Claude Tracker 是一个为 [Claude Code](https://docs.anthropic.com/claude/docs
 
 ### 1. 安装
 
-使用 [uv](https://github.com/astral-sh/uv) 或 pip 安装：
+推荐使用 [uv](https://github.com/astral-sh/uv) 进行快速安装和环境管理：
 
 ```bash
 git clone https://github.com/Mywifi/claude-code-tracker.git
 cd claude-code-tracker
+
+# 使用 uv 创建虚拟环境并安装（推荐）
+uv venv
+source .venv/bin/activate  # Windows 使用 .venv\Scripts\activate
+uv pip install -e .
+
+# 或者使用标准 pip 安装
 pip install -e .
 ```
 
 ### 2. 配置
 
-创建 `.env` 文件或设置环境变量：
+在项目根目录创建 `.env` 文件：
 
 ```env
 TARGET_SERVER=https://api.anthropic.com  # 目标 API 地址
 PORT=8082                               # 代理服务器监听端口
-VERIFY_SSL=true                         # 是否验证 SSL
 DATA_DIR=data                           # 数据存储目录
 ```
 
-### 3. 启动代理
+### 3. 运行
 
+你可以使用以下任一方式启动项目：
+
+#### A. 使用命令行工具 (推荐)
+安装后可直接在终端运行：
 ```bash
 claude-tracker
 ```
 
+#### B. 开发模式 (支持热重载)
+如果你在修改代码并希望自动生效：
+```bash
+uv run uvicorn claude_code_tracker.proxy:app --host 0.0.0.0 --port 8082 --reload
+```
+
+#### C. 使用 Docker
+```bash
+docker-compose up -d
+```
+
 ### 4. 在 Claude Code 中使用
 
-配置 Claude Code 使用此代理：
+设置环境变量让 Claude Code 指向本地代理：
 
 ```bash
-# 修改 Claude Code 的 API base 路径
 export ANTHROPIC_BASE_URL=http://localhost:8082
 claude
 ```
 
 ### 5. 查看报告
 
-访问 `http://localhost:8082/report` 即可查看捕获到的对话详情。
+访问 `http://localhost:8082/report` 即可查看捕获到的对话详情，页面会自动刷新。
 
 ## 📂 项目结构
 
