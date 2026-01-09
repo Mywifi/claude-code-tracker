@@ -46,7 +46,7 @@ async function fetchData() {
         renderPromptList();
         updateSummary();
         if (currentDetailIndex !== null) {
-            showDetail(currentDetailIndex);
+            showDetail(currentDetailIndex, false);  // Don't reset scroll on data refresh
         }
     } catch (e) {
         console.error("Failed to fetch data:", e);
@@ -77,8 +77,16 @@ function updateSummary() {
 function renderPromptList() {
     const listContainer = document.getElementById('prompt-list');
     listContainer.innerHTML = '';
-    
+
     if (!appData || !appData.prompts) return;
+
+    // Create a map of item to its original index for quick lookup
+    const indexMap = new Map();
+    appData.prompts.forEach((item, idx) => {
+        // Use a combination of timestamp and model as key
+        const key = `${item.timestamp}-${item.model}`;
+        indexMap.set(item, idx);
+    });
 
     // Sort by updated_at descending, fallback to timestamp
     const sortedPrompts = [...appData.prompts].sort((a, b) => {
@@ -88,13 +96,13 @@ function renderPromptList() {
     });
 
     sortedPrompts.forEach((item) => {
-        // Find original index in appData.prompts for showDetail
-        const actualIndex = appData.prompts.indexOf(item);
+        // Get original index from the map
+        const actualIndex = indexMap.get(item);
         const div = document.createElement('div');
         div.className = `p-5 list-item cursor-pointer border-l-4 border-l-transparent group ${currentDetailIndex === actualIndex ? 'active' : ''}`;
         div.id = `item-${actualIndex}`;
         div.onclick = () => showDetail(actualIndex);
-        
+
         let preview = item.first_user_message || "No message content";
         if (!item.first_user_message && item.full_request.messages && item.full_request.messages.length > 0) {
             const lastMsg = item.full_request.messages[item.full_request.messages.length - 1];
@@ -119,7 +127,7 @@ function renderPromptList() {
     });
 }
 
-function showDetail(index) {
+function showDetail(index, resetScroll = true) {
     currentDetailIndex = index;
     const item = appData.prompts[index];
     
@@ -148,8 +156,10 @@ function showDetail(index) {
     
     switchTab(currentTab);
     
-    // Reset scroll
-    document.getElementById('scroll-container').scrollTop = 0;
+    // Only reset scroll when user clicks (not on data refresh)
+    if (resetScroll) {
+        document.getElementById('scroll-container').scrollTop = 0;
+    }
     
     // Highlight code
     if (typeof Prism !== 'undefined') {
@@ -181,7 +191,7 @@ function processText(text) {
             <div class="mt-6 border border-amber-900/40 bg-amber-950/20 rounded-lg overflow-hidden">
                 <div class="bg-amber-950/40 px-3 py-1.5 flex items-center gap-2 border-b border-amber-900/20">
                     <svg class="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                    <span class="text-[8px] font-black text-amber-600 uppercase tracking-widest">System Warning</span>
+                    <span class="text-[8px] font-black text-amber-600 uppercase tracking-widest">system-reminder</span>
                 </div>
                 <div class="p-5 text-[13px] text-amber-200/70 markdown-body bg-transparent">${marked.parse(match[1])}</div>
             </div>`;
@@ -461,10 +471,46 @@ function updateTOC() {
 
     addTocItem('section-system', 'System Directives');
     addTocItem('section-messages', 'Interaction Log');
-    
+
     const item = appData.prompts[currentDetailIndex];
     item.full_request.messages.forEach((msg, mIdx) => {
-        addTocItem(`msg-${mIdx}`, `${msg.role.toUpperCase()} INPUT`, 1);
+        // Extract preview text from message content
+        let previewText = msg.role.toUpperCase();
+        let foundContent = false;
+
+        if (msg.content) {
+            if (typeof msg.content === 'string') {
+                previewText = msg.content.substring(0, 20).replace(/\n/g, ' ').trim();
+                foundContent = true;
+            } else if (Array.isArray(msg.content)) {
+                // Check if this is a tool_result only message (skip it)
+                const hasText = msg.content.some(c => c.type === 'text');
+                const hasToolUse = msg.content.some(c => c.type === 'tool_use');
+                const onlyToolResult = !hasText && !hasToolUse && msg.content.some(c => c.type === 'tool_result');
+                if (onlyToolResult) return;  // Skip tool_result only messages
+
+                // Try to find text content first
+                const textObj = msg.content.find(c => c.type === 'text');
+                if (textObj && textObj.text) {
+                    previewText = textObj.text.substring(0, 20).replace(/\n/g, ' ').trim();
+                    foundContent = true;
+                } else {
+                    // Try to find tool_use name
+                    const toolUse = msg.content.find(c => c.type === 'tool_use');
+                    if (toolUse && toolUse.name) {
+                        previewText = `[${toolUse.name}]`;
+                        foundContent = true;
+                    }
+                }
+            }
+        }
+
+        // Only use role if we didn't find actual content
+        if (!foundContent) {
+            previewText = msg.role.toUpperCase();
+        }
+
+        addTocItem(`msg-${mIdx}`, previewText, 1);
     });
     
     addTocItem('section-response', 'Final Response');
