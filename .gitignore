@@ -42,3 +42,5 @@ ai_prompts.json
 prompt_report.html
 *.json
 !pyproject.toml
+.claude/
+.cursor/

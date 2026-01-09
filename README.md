@@ -12,7 +12,6 @@ Claude Tracker 是一个为 [Claude Code](https://docs.anthropic.com/claude/docs
 | 主题切换 | 支持深色/浅色模式，一键切换 |
 | 自动刷新 | 报告界面实时更新，无需手动刷新页面 |
 | 智能去重 | 相同请求自动去重，避免重复记录 |
-| SSL 适配 | 检测到私有 IP 时自动处理 SSL 验证 |
 
 ## 截图预览
 
@@ -71,8 +70,6 @@ DATA_DIR=data
 # 可选：数据文件名（默认 ai_prompts.json）
 PROMPTS_FILE=ai_prompts.json
 
-# 可选：是否验证 SSL（默认 true）
-VERIFY_SSL=true
 ```
 
 ### 运行
@@ -159,20 +156,6 @@ pytest
 # 手动运行代理
 claude-tracker
 ```
-
-## 常见问题
-
-**Q: 记录重复怎么办？**
-A: 系统会自动去重。5 秒内相同的请求只会记录一次。如需调整，可修改 `DEDUP_WINDOW_SECONDS` 配置。
-
-**Q: 如何导出数据？**
-A: 直接复制 `data/ai_prompts.json` 文件，或使用任意 JSON 格式化工具导出。
-
-**Q: 支持哪些 API？**
-A: 支持所有兼容 OpenAI API 格式的接口，包括 Anthropic、OpenAI、MiniMax 等。
-
-**Q: 私密数据安全吗？**
-A: 所有数据仅保存在本地，不会上传到任何服务器。
 
 ## 许可证
 
